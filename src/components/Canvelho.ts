@@ -98,8 +98,8 @@ export class Canvelho {
     }
   }
 
-  public setStyle(style: Style, position?: Position | Range): void {
-    if (position.start && position.end) {
+  public setStyle(style: Style, position: Position | Range | null): void {
+    if ((position as Range).start && (position as Range).end) {
       this.forAllInRange(({ line, index }) => {
         this.currentStyles[line][index] = {
           ...this.currentStyles[line][index],
@@ -107,8 +107,13 @@ export class Canvelho {
         };
       });
     } else if (position) {
-      const styles = this.currentStyles[position.line][position.index];
-      this.currentStyles[position.line][position.index] = {
+      const styles =
+        this.currentStyles[(position as Position).line][
+          (position as Position).index
+        ];
+      this.currentStyles[(position as Position).line][
+        (position as Position).index
+      ] = {
         ...styles,
         ...style,
       };
@@ -131,8 +136,8 @@ export class Canvelho {
       this.context.canvas.width,
       this.context.canvas.height
     );
-    this.writeText(this.currentText, 10, 50);
-    this.drawCaret(10, 50);
+    this.writeText(this.currentText);
+    this.drawCaret();
     this.drawSelectionHighlight();
   }
 
@@ -559,7 +564,7 @@ export class Canvelho {
             : currentLetter.toLowerCase();
 
         this.context.font = `${letterStyle.fontStyle} ${letterStyle.fontWeight} ${letterStyle.fontSize}px ${letterStyle.fontFamily} `;
-        this.context.fillStyle = letterStyle.color;
+        this.context.fillStyle = letterStyle.color || "black";
         const letterWidth = this.context.measureText(letter).width;
         this.context.fillText(letter, cursorX, cursorY);
 

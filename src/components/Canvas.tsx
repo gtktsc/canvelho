@@ -13,9 +13,7 @@ const useCanvasDrawing = (
     if (canvas) {
       setCanvelho(new Canvelho(canvas));
     }
-  }, [canvas, isReady]);
-  window.canvelho = canvelho;
-  return canvelho;
+  }, [canvas, isReady]);  return canvelho;
 };
 
 const CanvasComponent: React.FC = () => {
@@ -38,13 +36,12 @@ const CanvasComponent: React.FC = () => {
           onChange={(e) => {
             canvhelho?.setStyle(
               { color: e.target.value },
-              canvhelho.selectionRange
+              canvhelho?.selectionRange
             );
           }}
         />
         <button
           onClick={() => {
-            console.log(canvhelho.selectionRange);
             canvhelho?.setStyle(
               { fontStyle: "italic" },
               canvhelho.selectionRange
@@ -55,7 +52,6 @@ const CanvasComponent: React.FC = () => {
         </button>
         <button
           onClick={() => {
-            console.log(canvhelho.selectionRange);
             canvhelho?.setStyle(
               { fontWeight: "bold" },
               canvhelho.selectionRange
@@ -66,7 +62,6 @@ const CanvasComponent: React.FC = () => {
         </button>
         <button
           onClick={() => {
-            console.log(canvhelho.selectionRange);
             canvhelho?.setStyle(
               { fontWeight: "normal" },
               canvhelho.selectionRange
@@ -77,7 +72,6 @@ const CanvasComponent: React.FC = () => {
         </button>
         <button
           onClick={() => {
-            console.log(canvhelho.selectionRange);
             canvhelho?.setStyle(
               { textTransform: "uppercase" },
               canvhelho.selectionRange
