@@ -1,13 +1,27 @@
+type Style = {
+  color?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  fontWeight?: string;
+  textTransform?: string;
+  fontStyle?: string;
+  textDecoration?: string;
+};
+
+type Position = { line: number; index: number };
+type Range = {
+  start: Position;
+  end: Position;
+};
+
 export class Canvelho {
   private context: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
   private currentText: string[] = ["Hello", "world!"];
+  private currentStyles: Style[][] = [[]];
 
-  private caretPosition: { line: number; index: number } | null = null;
-  private selectionRange: {
-    start: { line: number; index: number };
-    end: { line: number; index: number };
-  } | null = null;
+  private caretPosition: Position | null = null;
+  public selectionRange: Range | null = null;
   private boundingBoxes: {
     x: number;
     y: number;
@@ -16,8 +30,7 @@ export class Canvelho {
   }[][] = [[]];
   private isMouseDown: boolean = false;
   private lineHeight: number = 60; // You can adjust this value as needed
-  private textColor: string = "black"; // Default text color
-  private startingPoint: { line: number; index: number } | null = null;
+  private startingPoint: Position | null = null;
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     if (!canvas) throw new Error("Canvas not found");
@@ -26,11 +39,88 @@ export class Canvelho {
     this.context = context;
 
     this.bindEvents();
-
-    this.writeText(this.currentText, 10, 50);
+    this.matchText();
+    this.writeText(this.currentText);
   }
-  public changeTextColor(color: string): void {
-    this.textColor = color;
+  private matchText() {
+    this.currentStyles = new Array(this.currentText.length)
+      .fill([])
+      .map((_, i) =>
+        new Array(this.currentText[i].length).fill({
+          color: "black",
+          fontSize: 48,
+          fontFamily: "serif",
+          textTransform: "none",
+          fontWeight: "lighter",
+          fontStyle: "normal",
+          textDecoration: "none",
+        })
+      );
+  }
+
+  private forAllInRange(callback: (position: Position) => void) {
+    console.log("s");
+    if (this.selectionRange) {
+      const { start, end } = this.selectionRange;
+      for (let line = start.line; line <= end.line; line++) {
+        const currentLine = this.currentText[line];
+
+        let lineLength = 0;
+
+        if (line === start.line && line !== end.line) {
+          lineLength = currentLine.length;
+        } else if (line === start.line) {
+          lineLength = end.index;
+        } else if (line === end.line) {
+          lineLength = end.index;
+        } else {
+          lineLength = currentLine.length;
+        }
+
+        let startIndex = 0;
+
+        if (line === start.line && line !== end.line) {
+          startIndex = start.index;
+        } else if (line === start.line) {
+          startIndex = start.index;
+        } else if (line === end.line) {
+          startIndex = 0;
+        } else {
+          startIndex = 0;
+        }
+
+        console.log(startIndex, lineLength);
+
+        for (let index = startIndex; index <= lineLength - 1; index++) {
+          callback({ line, index });
+        }
+      }
+    }
+  }
+
+  public setStyle(style: Style, position?: Position | Range): void {
+    if (position.start && position.end) {
+      this.forAllInRange(({ line, index }) => {
+        this.currentStyles[line][index] = {
+          ...this.currentStyles[line][index],
+          ...style,
+        };
+      });
+    } else if (position) {
+      const styles = this.currentStyles[position.line][position.index];
+      this.currentStyles[position.line][position.index] = {
+        ...styles,
+        ...style,
+      };
+    } else {
+      const lastLineNumber = this.currentStyles.length - 1;
+      const lastLine = this.currentStyles[lastLineNumber];
+      this.currentStyles[lastLineNumber][lastLine.length - 1] = {
+        ...this.currentStyles[lastLineNumber][lastLine.length - 1],
+        ...style,
+      };
+    }
+
     this.render(); // Re-render the canvas with the new text color
   }
 
@@ -42,14 +132,11 @@ export class Canvelho {
       this.context.canvas.height
     );
     this.writeText(this.currentText, 10, 50);
-    this.drawCaret(10, 50, 48);
+    this.drawCaret(10, 50);
     this.drawSelectionHighlight();
   }
 
   private handleCaretKeyActions(event: KeyboardEvent): void {
-    const { line, index } = this.caretPosition!;
-    const lineText = this.currentText[line];
-
     if (this.caretPosition !== null) {
       const { line, index } = this.caretPosition;
       const lineText = this.currentText[line];
@@ -94,10 +181,16 @@ export class Canvelho {
           this.caretPosition = { line, index: lineText.length };
         }
       } else if (event.key === "Enter") {
+        const styles = this.currentStyles[line];
+        const styleBeforeCaret = styles.slice(0, index);
+        const styleAfterCaret = styles.slice(index);
         const textBeforeCaret = lineText.slice(0, index);
         const textAfterCaret = lineText.slice(index);
         this.currentText[line] = textBeforeCaret;
+        this.currentStyles[line] = styleBeforeCaret;
+        this.currentStyles.splice(line + 1, 0, styleAfterCaret);
         this.currentText.splice(line + 1, 0, textAfterCaret);
+
         this.caretPosition = { line: line + 1, index: 0 };
         this.render();
       } else if (event.key === "Backspace") {
@@ -119,6 +212,11 @@ export class Canvelho {
         const newText =
           lineText.slice(0, index) + event.key + lineText.slice(index);
         this.currentText[line] = newText;
+        this.currentStyles[line].splice(
+          index,
+          0,
+          this.currentStyles[line][index - 1]
+        );
         this.caretPosition = { line, index: index + 1 };
       }
       this.render();
@@ -174,6 +272,11 @@ export class Canvelho {
         event.key +
         this.currentText[end.line].slice(end.index);
       this.currentText.splice(start.line, end.line - start.line + 1, newText);
+      this.currentStyles[start.line].splice(
+        start.index + 1,
+        0,
+        this.currentStyles[start.line][start.index - 1]
+      );
 
       // Set caret position after inserted text
       const newCaretPosition = { line: start.line, index: start.index + 1 };
@@ -322,8 +425,8 @@ export class Canvelho {
     line: number,
     index: number
   ): {
-    start: { line: number; index: number };
-    end: { line: number; index: number };
+    start: Position;
+    end: Position;
   } | null {
     const lineText = this.currentText[line];
     if (index >= 0 && index < lineText.length) {
@@ -406,10 +509,7 @@ export class Canvelho {
     }
   }
 
-  private findBoundingBoxAtPosition(
-    x: number,
-    y: number
-  ): { line: number; index: number } | null {
+  private findBoundingBoxAtPosition(x: number, y: number): Position | null {
     for (let i = 0; i < this.boundingBoxes.length; i++) {
       const box = this.boundingBoxes[i];
       for (let j = 0; j < box.length; j++) {
@@ -427,7 +527,7 @@ export class Canvelho {
     return null;
   }
 
-  public writeText(text: string[], x: number, y: number): void {
+  public writeText(text: string[]): void {
     this.context.clearRect(
       0,
       0,
@@ -435,8 +535,7 @@ export class Canvelho {
       this.context.canvas.height
     );
     this.currentText = text;
-    this.context.font = "48px serif";
-    this.context.textBaseline = "top";
+    this.context.textBaseline = "bottom";
 
     const boundingBoxes: {
       x: number;
@@ -444,18 +543,25 @@ export class Canvelho {
       width: number;
       height: number;
     }[][] = [];
-
+    let cursorY = this.lineHeight;
     for (let lineIndex = 0; lineIndex < text.length; lineIndex++) {
       const line = text[lineIndex];
-      let cursorX = x;
+      let cursorX = 0;
+
       boundingBoxes[lineIndex] = [];
-
       for (let i = 0; i < line.length; i++) {
-        const letter = line[i];
-        const letterWidth = this.context.measureText(letter).width;
-        this.context.fillStyle = this.textColor;
+        const letterStyle = this.currentStyles[lineIndex][i];
 
-        this.context.fillText(letter, cursorX, y);
+        const currentLetter = line[i];
+        const letter =
+          letterStyle.textTransform === "uppercase"
+            ? currentLetter.toUpperCase()
+            : currentLetter.toLowerCase();
+
+        this.context.font = `${letterStyle.fontStyle} ${letterStyle.fontWeight} ${letterStyle.fontSize}px ${letterStyle.fontFamily} `;
+        this.context.fillStyle = letterStyle.color;
+        const letterWidth = this.context.measureText(letter).width;
+        this.context.fillText(letter, cursorX, cursorY);
 
         const textMetrics = this.context.measureText(letter);
         const width = textMetrics.width;
@@ -465,34 +571,47 @@ export class Canvelho {
 
         boundingBoxes[lineIndex].push({
           x: cursorX,
-          y: y - textMetrics.actualBoundingBoxAscent,
+          y: cursorY - textMetrics.actualBoundingBoxAscent,
           width,
           height,
         });
 
         cursorX += letterWidth;
       }
-
-      y += this.lineHeight; // Use the custom lineHeight property instead of adding ascent, descent, and spacing
+      cursorY += this.lineHeight; // Use the custom lineHeight property instead of adding ascent, descent, and spacing
     }
     this.boundingBoxes = boundingBoxes;
   }
 
-  public drawCaret(x: number, y: number, height: number): void {
+  public drawCaret(): void {
     if (this.caretPosition !== null) {
       const { line, index } = this.caretPosition;
       const lineText = this.currentText[line];
 
       if (lineText) {
         const textBeforeCaret = lineText.slice(0, index);
-        const caretX = x + this.context.measureText(textBeforeCaret).width;
-        const caretY = y + line * this.lineHeight; // Calculate Y position based on line number and lineHeight
+        const caretX = Array.from(textBeforeCaret).reduce(
+          (previous, current, index) => {
+            const letterStyle = this.currentStyles[line][index];
+            const currentLetter = current;
+            const letter =
+              letterStyle.textTransform === "uppercase"
+                ? currentLetter.toUpperCase()
+                : currentLetter.toLowerCase();
 
+            this.context.font = `${letterStyle.fontWeight} ${letterStyle.fontSize}px ${letterStyle.fontFamily} `;
+
+            const width = this.context.measureText(letter).width;
+            return previous + width;
+          },
+          0
+        );
+        const caretY = line * this.lineHeight; // Calculate Y position based on line number and lineHeight
         this.context.beginPath();
         this.context.strokeStyle = "black";
         this.context.lineWidth = 2;
         this.context.moveTo(caretX, caretY);
-        this.context.lineTo(caretX, caretY + height);
+        this.context.lineTo(caretX, caretY + this.lineHeight);
         this.context.stroke();
         this.context.closePath();
       }
