@@ -1,13 +1,11 @@
 import { defaultStyles } from "./constants";
 import { Position, Range, Styles, Text as TextType } from "./types";
-import { forAllInRange } from "./utils";
 
 export class Text {
   private text: TextType;
   private styles: Styles = [[]];
   constructor(text: string[]) {
     this.text = text;
-    console.log(this.text);
     this.generateStylesMap();
   }
 

@@ -1,23 +1,54 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Canvelho } from "./Canvelho";
+import { Position, Range, Styles, Text } from "./types";
 
 const useCanvasDrawing = (
   canvas: HTMLCanvasElement | null,
   isReady: boolean
 ) => {
+  const [text, setText] = useState<Text>([]);
+  const [styles, setStyles] = useState<Styles>([]);
+  const [caretPosition, setCaretPosition] = useState<Position | null>(null);
+  const [rangePosition, setRangePosition] = useState<Range | null>(null);
   const [canvelho, setCanvelho] = useState<Canvelho | null>(null);
 
   useEffect(() => {
     if (canvas) {
       setCanvelho(
-        new Canvelho({ canvas, text: "1234\nabcdefghijklmno\nEFGH" })
+        new Canvelho({
+          canvas,
+          text: "1234\nabcdefghijklmno\nEFGH",
+          onChange: ({ text, styles, caret, range }) => {
+            setText(text);
+            setStyles(styles);
+            setCaretPosition(caret);
+            setRangePosition(range);
+          },
+        })
       );
     }
   }, [canvas, isReady]);
 
-  return canvelho;
+  useEffect(() => {
+    if (canvelho) {
+      canvelho.setOnChange(({ text, styles, caret, range }) => {
+        setText(text);
+        setStyles(styles);
+        setCaretPosition(caret);
+        setRangePosition(range);
+      });
+    }
+  }, [canvelho, setText, setStyles, setCaretPosition, setRangePosition]);
+
+  if (typeof window !== "undefined") {
+    //@ts-ignore
+    window.canvelho = canvelho;
+  }
+
+
+  return { canvelho, text, styles, rangePosition, caretPosition };
 };
 
 const CanvasComponent: React.FC = () => {
@@ -30,7 +61,36 @@ const CanvasComponent: React.FC = () => {
     });
   }
 
-  const canvhelho = useCanvasDrawing(canvasRef.current, isReady);
+  const { canvelho, text, styles, rangePosition, caretPosition } =
+    useCanvasDrawing(canvasRef.current, isReady);
+
+  const currentStyles = canvelho?.getStyle(
+    rangePosition?.start || caretPosition
+  );
+
+  const toggleItalic = useCallback(() => {
+    const currentStyle = currentStyles?.fontStyle;
+    const toggled = currentStyle === "italic" ? "normal" : "italic";
+    canvelho?.setStyle(
+      {
+        fontStyle: toggled,
+      },
+      rangePosition || caretPosition
+    );
+  }, [currentStyles, canvelho, rangePosition, caretPosition]);
+
+  const toggleLowercase = useCallback(() => {
+    const toggled =
+      currentStyles?.textTransform === "uppercase" ? "lowercase" : "uppercase";
+
+    canvelho?.setStyle(
+      {
+        textTransform: toggled,
+      },
+      rangePosition || caretPosition
+    );
+  }, [currentStyles, canvelho, rangePosition, caretPosition]);
+
 
   return (
     <>
@@ -38,27 +98,18 @@ const CanvasComponent: React.FC = () => {
         <input
           type="color"
           onChange={(e) => {
-            canvhelho?.setStyle(
+            canvelho?.setStyle(
               { color: e.target.value },
-              canvhelho.selection.range.position
+              rangePosition || caretPosition
             );
           }}
         />
+        <button onClick={toggleItalic}>italic</button>
         <button
           onClick={() => {
-            canvhelho?.setStyle(
-              { fontStyle: "italic" },
-              canvhelho.selection.range.position
-            );
-          }}
-        >
-          italic
-        </button>
-        <button
-          onClick={() => {
-            canvhelho?.setStyle(
+            canvelho?.setStyle(
               { fontWeight: "bold" },
-              canvhelho.selection.range.position
+              rangePosition || caretPosition
             );
           }}
         >
@@ -66,30 +117,16 @@ const CanvasComponent: React.FC = () => {
         </button>
         <button
           onClick={() => {
-            canvhelho?.setStyle(
+            canvelho?.setStyle(
               { fontWeight: "normal" },
-              canvhelho.selection.range.position
+              rangePosition || caretPosition
             );
           }}
         >
           normal
         </button>
-        <button
-          onClick={() => {
-            canvhelho?.setStyle(
-              {
-                textTransform:
-                  canvhelho?.getStyle(canvhelho.selection.caret.position)
-                    .textTransform === "uppercase"
-                    ? "lowercase"
-                    : "uppercase",
-              },
-              canvhelho.selection.range.position
-            );
-          }}
-        >
-          {canvhelho?.getStyle(canvhelho.selection.caret.position)
-            .textTransform === "uppercase"
+        <button onClick={toggleLowercase}>
+          {currentStyles?.textTransform === "uppercase"
             ? "uppercase"
             : "lowercase"}
         </button>

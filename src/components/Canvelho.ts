@@ -1,30 +1,82 @@
 import { Events } from "./Events";
 import { Selection } from "./Selection";
 import { Text } from "./Text";
-import { Style, Position, Range as RangeType, BoundingBoxes } from "./types";
+import {
+  Style,
+  Position,
+  Text as TextType,
+  Range as RangeType,
+  BoundingBoxes,
+  Styles,
+} from "./types";
 import { getPreviousStyles, getStyledLetter, prepareText } from "./utils";
 
 export class Canvelho extends Events {
   private context: CanvasRenderingContext2D;
-
+  public onChange?: ({
+    text,
+    styles,
+    caret,
+    range,
+  }: {
+    text: TextType;
+    styles: Styles;
+    caret: Position | null;
+    range: RangeType | null;
+  }) => void;
   public boundingBoxes: BoundingBoxes = [[]];
 
   public selection: Selection;
   private text: Text;
   private lineHeight: number = 60;
 
-  constructor({ canvas, text }: { canvas: HTMLCanvasElement; text: string }) {
+  constructor({
+    canvas,
+    text,
+    onChange,
+  }: {
+    canvas: HTMLCanvasElement;
+    text: string;
+    onChange?: ({
+      text,
+      styles,
+      range,
+      caret,
+    }: {
+      text: TextType;
+      styles: Styles;
+      caret: Position | null;
+      range: RangeType | null;
+    }) => void;
+  }) {
     super(canvas);
     if (!canvas) throw new Error("Canvas not found");
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Canvas not found");
     this.context = context;
+    this.onChange = onChange;
 
     this.selection = new Selection({ canvas, onChange: () => this.render() });
     this.text = new Text(prepareText(text));
 
     this.render();
     this.updateListeners();
+  }
+
+  public setOnChange(
+    onChange: ({
+      text,
+      styles,
+      caret,
+      range,
+    }: {
+      text: TextType;
+      styles: Styles;
+      caret: Position | null;
+      range: RangeType | null;
+    }) => void
+  ) {
+    this.onChange = onChange;
   }
 
   private forAllInRange(
@@ -68,15 +120,14 @@ export class Canvelho extends Events {
     }
   }
 
-  public getStyle(
-    position: Position | null = this.selection.caret.position
-  ): Style {
+  public getStyle(position: Position | null): Style {
     if (position) {
       return this.text.getText().styles[position.line][position.index];
     }
-    const lastLineNumber = this.text.getText().styles.length - 1;
-    const lastLine = this.text.getText().styles[lastLineNumber];
-    return lastLine[lastLine.length - 1];
+
+    return this.text.getText().styles[this.selection.caret.position.line][
+      this.selection.caret.position.index - 1
+    ];
   }
 
   public setStyle(style: Style, position: Position | RangeType | null): void {
@@ -128,6 +179,13 @@ export class Canvelho extends Events {
     this.writeText();
     this.drawCaret();
     this.drawRange();
+
+    this.onChange?.({
+      text: this.text.getText().text,
+      styles: this.text.getText().styles,
+      caret: this.selection.caret.position,
+      range: this.selection.range.position,
+    });
   }
 
   private handleTextKeyActions(event: KeyboardEvent): void {
