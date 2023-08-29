@@ -11,9 +11,13 @@ const useCanvasDrawing = (
 
   useEffect(() => {
     if (canvas) {
-      setCanvelho(new Canvelho(canvas));
+      setCanvelho(
+        new Canvelho({ canvas, text: "1234\nabcdefghijklmno\nEFGH" })
+      );
     }
-  }, [canvas, isReady]);  return canvelho;
+  }, [canvas, isReady]);
+
+  return canvelho;
 };
 
 const CanvasComponent: React.FC = () => {
@@ -36,7 +40,7 @@ const CanvasComponent: React.FC = () => {
           onChange={(e) => {
             canvhelho?.setStyle(
               { color: e.target.value },
-              canvhelho?.selectionRange
+              canvhelho.selection.range.position
             );
           }}
         />
@@ -44,7 +48,7 @@ const CanvasComponent: React.FC = () => {
           onClick={() => {
             canvhelho?.setStyle(
               { fontStyle: "italic" },
-              canvhelho.selectionRange
+              canvhelho.selection.range.position
             );
           }}
         >
@@ -54,7 +58,7 @@ const CanvasComponent: React.FC = () => {
           onClick={() => {
             canvhelho?.setStyle(
               { fontWeight: "bold" },
-              canvhelho.selectionRange
+              canvhelho.selection.range.position
             );
           }}
         >
@@ -64,7 +68,7 @@ const CanvasComponent: React.FC = () => {
           onClick={() => {
             canvhelho?.setStyle(
               { fontWeight: "normal" },
-              canvhelho.selectionRange
+              canvhelho.selection.range.position
             );
           }}
         >
@@ -73,12 +77,21 @@ const CanvasComponent: React.FC = () => {
         <button
           onClick={() => {
             canvhelho?.setStyle(
-              { textTransform: "uppercase" },
-              canvhelho.selectionRange
+              {
+                textTransform:
+                  canvhelho?.getStyle(canvhelho.selection.caret.position)
+                    .textTransform === "uppercase"
+                    ? "lowercase"
+                    : "uppercase",
+              },
+              canvhelho.selection.range.position
             );
           }}
         >
-          uppercase
+          {canvhelho?.getStyle(canvhelho.selection.caret.position)
+            .textTransform === "uppercase"
+            ? "uppercase"
+            : "lowercase"}
         </button>
       </div>
       <div>
