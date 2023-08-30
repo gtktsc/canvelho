@@ -28,7 +28,8 @@ export class Caret {
   public onKeyDown(event: KeyboardEvent) {
     const { line, index } = this.position;
     const lineText = this.boundingBoxes[line];
-
+    if (event.metaKey || event.ctrlKey) return;
+    
     if (event.key === "ArrowLeft") {
       if (index > 0) {
         this.updatePosition({ line, index: index - 1 });

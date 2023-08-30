@@ -3,9 +3,12 @@ import {
   compareTwoPositions,
   findBoundingBoxAtPosition,
   getBoundingBoxCenterX,
+  getWordBounds,
 } from "./utils";
 
 export class Range {
+  public currentText: string[] = [];
+
   public onChange: () => void;
   public onEnd: (range: RangeType) => void;
 
@@ -81,6 +84,25 @@ export class Range {
       start: { line, index },
       end: { line, index: index + 1 },
     });
+  }
+
+  onClick(event: MouseEvent) {
+    if (event.detail === 3) {
+      const { offsetX, offsetY } = event;
+      const clickedBoundingBox = findBoundingBoxAtPosition(
+        offsetX,
+        offsetY,
+        this.boundingBoxes
+      );
+      if (!clickedBoundingBox) return;
+
+      const { line, index } = clickedBoundingBox;
+      const wordBounds = getWordBounds(line, index, this.currentText[line]);
+
+      if (wordBounds) {
+        this.updatePosition(wordBounds);
+      }
+    }
   }
 
   onMouseMove(event: MouseEvent) {

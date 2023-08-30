@@ -31,6 +31,7 @@ export class Selection extends Events {
 
   onClick(event: MouseEvent) {
     if (!this.range.position) this.caret.onClick(event);
+    this.range.onClick(event);
   }
 
   onMouseDown(event: MouseEvent) {

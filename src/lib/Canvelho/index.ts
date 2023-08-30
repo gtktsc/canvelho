@@ -201,10 +201,12 @@ export class Canvelho extends Events {
   }
 
   private updateListeners() {
+    const text = this.text.getText().text;
     this.selection.caret.boundingBoxes = this.boundingBoxes;
-    this.selection.caret.currentText = this.text.getText().text;
+    this.selection.caret.currentText = text;
 
     this.selection.range.boundingBoxes = this.boundingBoxes;
+    this.selection.range.currentText = text;
   }
 
   public render(): void {
@@ -267,12 +269,43 @@ export class Canvelho extends Events {
     this.selection.caret.updatePosition(newCaretPosition);
   }
 
-  public onKeyDown(event: KeyboardEvent) {
-    if (this.selection.range.position !== null) {
-      this.handleSelectionKeyActions(event);
-    } else if (this.selection.caret.position !== null) {
-      this.handleTextKeyActions(event);
+  public handleShortcuts(event: KeyboardEvent): void {
+    console.log(event);
+    if (
+      (event.key === "a" && event.metaKey) ||
+      (event.key === "a" && event.ctrlKey)
+    ) {
+      this.selection.range.updatePosition({
+        start: { line: 0, index: 0 },
+        end: {
+          line: this.boundingBoxes.length - 1,
+          index: this.boundingBoxes[this.boundingBoxes.length - 1].length,
+        },
+      });
+    } else if (
+      (event.key === "ArrowRight" && event.metaKey) ||
+      (event.key === "ArrowRight" && event.ctrlKey)
+    ) {
+      console.log("here", this.selection.caret.position);
+      this.selection.caret.updatePosition({
+        line: this.selection.caret.position?.line || 0,
+        index:
+          this.boundingBoxes[this.selection.caret.position?.line || 0].length,
+      });
     }
+  }
+
+  public onKeyDown(event: KeyboardEvent) {
+    if (event.metaKey || event.ctrlKey) {
+      this.handleShortcuts(event);
+    } else {
+      if (this.selection.range.position !== null) {
+        this.handleSelectionKeyActions(event);
+      } else if (this.selection.caret.position !== null) {
+        this.handleTextKeyActions(event);
+      }
+    }
+
     this.render();
   }
 
