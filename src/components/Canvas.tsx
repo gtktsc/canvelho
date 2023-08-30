@@ -1,35 +1,56 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Canvelho } from "./Canvelho";
-import { Position, Range, Styles, Text } from "./types";
+import { Canvelho } from "../lib/Canvelho";
+import { Position, Range, Styles, Text } from "../lib/Canvelho/types";
+
+import {
+  RxLetterCaseLowercase,
+  RxLetterCaseUppercase,
+  RxFontBold,
+  RxFontItalic,
+  RxReset,
+} from "react-icons/rx";
 
 const useCanvasDrawing = (
   canvas: HTMLCanvasElement | null,
   isReady: boolean
 ) => {
+  const [_, setUpdate] = useState({});
   const [text, setText] = useState<Text>([]);
   const [styles, setStyles] = useState<Styles>([]);
   const [caretPosition, setCaretPosition] = useState<Position | null>(null);
   const [rangePosition, setRangePosition] = useState<Range | null>(null);
   const [canvelho, setCanvelho] = useState<Canvelho | null>(null);
 
+  const setCanvasSize = useCallback(() => {
+    if (canvas) {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    }
+  }, [canvas]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.addEventListener("resize", setCanvasSize);
+    return () => {
+      window.removeEventListener("resize", setCanvasSize);
+    };
+  }, [setCanvasSize]);
+
   useEffect(() => {
     if (canvas) {
+      setCanvasSize();
+
       setCanvelho(
         new Canvelho({
           canvas,
-          text: "1234\nabcdefghijklmno\nEFGH",
-          onChange: ({ text, styles, caret, range }) => {
-            setText(text);
-            setStyles(styles);
-            setCaretPosition(caret);
-            setRangePosition(range);
-          },
+          text: "Simple rich text editor in canvas\nstill in development",
         })
       );
     }
-  }, [canvas, isReady]);
+  }, [canvas, isReady, setCanvasSize]);
 
   useEffect(() => {
     if (canvelho) {
@@ -38,6 +59,7 @@ const useCanvasDrawing = (
         setStyles(styles);
         setCaretPosition(caret);
         setRangePosition(range);
+        setUpdate({});
       });
     }
   }, [canvelho, setText, setStyles, setCaretPosition, setRangePosition]);
@@ -46,8 +68,6 @@ const useCanvasDrawing = (
     //@ts-ignore
     window.canvelho = canvelho;
   }
-
-
   return { canvelho, text, styles, rangePosition, caretPosition };
 };
 
@@ -61,8 +81,10 @@ const CanvasComponent: React.FC = () => {
     });
   }
 
-  const { canvelho, text, styles, rangePosition, caretPosition } =
-    useCanvasDrawing(canvasRef.current, isReady);
+  const { canvelho, rangePosition, caretPosition } = useCanvasDrawing(
+    canvasRef.current,
+    isReady
+  );
 
   const currentStyles = canvelho?.getStyle(
     rangePosition?.start || caretPosition
@@ -71,75 +93,80 @@ const CanvasComponent: React.FC = () => {
   const toggleItalic = useCallback(() => {
     const currentStyle = currentStyles?.fontStyle;
     const toggled = currentStyle === "italic" ? "normal" : "italic";
-    canvelho?.setStyle(
-      {
-        fontStyle: toggled,
-      },
-      rangePosition || caretPosition
-    );
-  }, [currentStyles, canvelho, rangePosition, caretPosition]);
+    canvelho?.setStyle({
+      fontStyle: toggled,
+    });
+  }, [currentStyles, canvelho]);
 
   const toggleLowercase = useCallback(() => {
     const toggled =
       currentStyles?.textTransform === "uppercase" ? "lowercase" : "uppercase";
 
-    canvelho?.setStyle(
-      {
-        textTransform: toggled,
-      },
-      rangePosition || caretPosition
-    );
-  }, [currentStyles, canvelho, rangePosition, caretPosition]);
+    canvelho?.setStyle({
+      textTransform: toggled,
+    });
+  }, [currentStyles, canvelho]);
 
+  const toggleBold = useCallback(() => {
+    const toggled = currentStyles?.fontWeight === "bold" ? "normal" : "bold";
+
+    canvelho?.setStyle({
+      fontWeight: toggled,
+    });
+  }, [currentStyles, canvelho]);
 
   return (
     <>
-      <div>
+      <section id="controls-wrapper">
         <input
           type="color"
+          value={currentStyles?.color}
           onChange={(e) => {
-            canvelho?.setStyle(
-              { color: e.target.value },
-              rangePosition || caretPosition
-            );
+            canvelho?.setStyle({ color: e.target.value });
           }}
         />
-        <button onClick={toggleItalic}>italic</button>
-        <button
-          onClick={() => {
-            canvelho?.setStyle(
-              { fontWeight: "bold" },
-              rangePosition || caretPosition
-            );
+        <input
+          type="range"
+          min={10}
+          max={50}
+          value={currentStyles?.fontSize}
+          onChange={(e) => {
+            canvelho?.setStyle({ fontSize: Number(e.target.value) });
           }}
-        >
-          bold
+        />
+        <button onClick={toggleItalic}>
+          <RxFontItalic
+            color={currentStyles?.fontStyle === "italic" ? "black" : "grey"}
+          />
+        </button>
+        <button onClick={toggleBold}>
+          <RxFontBold
+            color={currentStyles?.fontWeight === "bold" ? "black" : "grey"}
+          />
         </button>
         <button
           onClick={() => {
-            canvelho?.setStyle(
-              { fontWeight: "normal" },
-              rangePosition || caretPosition
-            );
+            canvelho?.setStyle({
+              fontWeight: "normal",
+              fontStyle: "normal",
+              textTransform: "none",
+              fontSize: 20,
+            });
           }}
         >
-          normal
+          <RxReset />
         </button>
         <button onClick={toggleLowercase}>
-          {currentStyles?.textTransform === "uppercase"
-            ? "uppercase"
-            : "lowercase"}
+          {currentStyles?.textTransform === "uppercase" ? (
+            <RxLetterCaseUppercase />
+          ) : (
+            <RxLetterCaseLowercase />
+          )}
         </button>
-      </div>
-      <div>
-        <canvas
-          style={{ border: "1px solid red", outline: "none" }}
-          tabIndex={1}
-          ref={canvasRef}
-          width={500}
-          height={500}
-        />
-      </div>
+      </section>
+      <section id="canvas-wrapper">
+        <canvas tabIndex={1} ref={canvasRef} />
+      </section>
     </>
   );
 };

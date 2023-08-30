@@ -7,6 +7,7 @@ export class Events {
   public onMouseMove?(event: MouseEvent): void;
   public onClick?(event: MouseEvent): void;
   public onDoubleClick?(event: MouseEvent): void;
+  public onResize?(event: Event): void;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -16,28 +17,40 @@ export class Events {
 
   onDoubleClickCallback(event: MouseEvent): void {
     this.onDoubleClick?.(event);
+    event.stopPropagation();
+  }
+
+  onResizeCallback(event: Event): void {
+    this.onResize?.(event);
+    event.stopPropagation();
   }
 
   onClickCallback(event: MouseEvent): void {
     this.onClick?.(event);
+    event.stopPropagation();
   }
 
   onKeyDownCallback(event: KeyboardEvent): void {
     this.onKeyDown?.(event);
+    event.stopPropagation();
   }
 
   onKeyUpCallback(event: KeyboardEvent): void {
     this.onKeyUp?.(event);
+    event.stopPropagation();
   }
 
   onMouseDownCallback(event: MouseEvent): void {
     this.onMouseDown?.(event);
+    event.stopPropagation();
   }
   onMouseUpCallback(event: MouseEvent): void {
     this.onMouseUp?.(event);
+    event.stopPropagation();
   }
   onMouseMoveCallback(event: MouseEvent): void {
     this.onMouseMove?.(event);
+    event.stopPropagation();
   }
 
   bindEvents(): void {
@@ -48,9 +61,12 @@ export class Events {
     this.onMouseMoveCallback = this.onMouseMoveCallback.bind(this);
     this.onClickCallback = this.onClickCallback.bind(this);
     this.onDoubleClickCallback = this.onDoubleClickCallback.bind(this);
+    this.onResizeCallback = this.onResizeCallback.bind(this);
   }
 
   setupEvents() {
+    if (typeof window === "undefined") return;
+
     this.canvas.addEventListener("keydown", this.onKeyDownCallback);
     this.canvas.addEventListener("keyup", this.onKeyUpCallback);
     this.canvas.addEventListener("mousedown", this.onMouseDownCallback);
@@ -58,6 +74,7 @@ export class Events {
     this.canvas.addEventListener("mousemove", this.onMouseMoveCallback);
     this.canvas.addEventListener("click", this.onClickCallback);
     this.canvas.addEventListener("dblclick", this.onDoubleClickCallback);
+    window.addEventListener("resize", this.onResizeCallback);
   }
   removeEvents() {
     this.canvas.removeEventListener("keydown", this.onKeyDownCallback);
@@ -67,5 +84,6 @@ export class Events {
     this.canvas.removeEventListener("mousemove", this.onMouseMoveCallback);
     this.canvas.removeEventListener("click", this.onClickCallback);
     this.canvas.removeEventListener("dblclick", this.onDoubleClickCallback);
+    window.removeEventListener("resize", this.onResizeCallback);
   }
 }

@@ -120,9 +120,21 @@ export class Canvelho extends Events {
     }
   }
 
-  public getStyle(position: Position | null): Style {
+  public onResize(): void {
+    this.render();
+  }
+
+  public getStyle(position?: Position | null): Style {
     if (position) {
       return this.text.getText().styles[position.line][position.index];
+    }
+    const maybeNewPosition =
+      this.selection.range.position?.start || this.selection.caret.position;
+
+    if (maybeNewPosition) {
+      return this.text.getText().styles[maybeNewPosition.line][
+        maybeNewPosition.index
+      ];
     }
 
     return this.text.getText().styles[this.selection.caret.position.line][
@@ -130,32 +142,59 @@ export class Canvelho extends Events {
     ];
   }
 
-  public setStyle(style: Style, position: Position | RangeType | null): void {
-    if ((position as RangeType).start && (position as RangeType).end) {
-      this.forAllInRange(({ line, index }) => {
-        this.text.getText().styles[line][index] = {
-          ...this.text.getText().styles[line][index],
-          ...style,
-        };
-      });
-    } else if (position) {
-      const styles =
+  public setStyle(style: Style, position?: Position | RangeType | null): void {
+    if (position) {
+      if ((position as RangeType)?.start && (position as RangeType)?.end) {
+        this.forAllInRange(({ line, index }) => {
+          this.text.getText().styles[line][index] = {
+            ...this.text.getText().styles[line][index],
+            ...style,
+          };
+        });
+      } else if (position) {
+        const styles =
+          this.text.getText().styles[(position as Position).line][
+            (position as Position).index
+          ];
         this.text.getText().styles[(position as Position).line][
           (position as Position).index
-        ];
-      this.text.getText().styles[(position as Position).line][
-        (position as Position).index
-      ] = {
-        ...styles,
-        ...style,
-      };
+        ] = {
+          ...styles,
+          ...style,
+        };
+      } else {
+        const lastLineNumber = this.text.getText().styles.length - 1;
+        const lastLine = this.text.getText().styles[lastLineNumber];
+        this.text.getText().styles[lastLineNumber][lastLine.length - 1] = {
+          ...this.text.getText().styles[lastLineNumber][lastLine.length - 1],
+          ...style,
+        };
+      }
     } else {
-      const lastLineNumber = this.text.getText().styles.length - 1;
-      const lastLine = this.text.getText().styles[lastLineNumber];
-      this.text.getText().styles[lastLineNumber][lastLine.length - 1] = {
-        ...this.text.getText().styles[lastLineNumber][lastLine.length - 1],
-        ...style,
-      };
+      const maybeNewPosition =
+        this.selection.range.position || this.selection.caret.position;
+      if (
+        (maybeNewPosition as RangeType)?.start &&
+        (maybeNewPosition as RangeType)?.end
+      ) {
+        this.forAllInRange(({ line, index }) => {
+          this.text.getText().styles[line][index] = {
+            ...this.text.getText().styles[line][index],
+            ...style,
+          };
+        });
+      } else if (position) {
+        const styles =
+          this.text.getText().styles[(position as Position).line][
+            (position as Position).index
+          ];
+        this.text.getText().styles[(position as Position).line][
+          (position as Position).index
+        ] = {
+          ...styles,
+          ...style,
+        };
+      }
     }
 
     this.render();
