@@ -126,13 +126,13 @@ export class Canvelho extends Events {
 
   public getStyle(position?: Position | null): Style {
     if (position) {
-      return this.text.getText().styles[position.line][position.index];
+      return this.text.getText().styles[position.line]?.[position.index];
     }
     const maybeNewPosition =
       this.selection.range.position?.start || this.selection.caret.position;
 
     if (maybeNewPosition) {
-      return this.text.getText().styles[maybeNewPosition.line][
+      return this.text.getText().styles[maybeNewPosition.line]?.[
         maybeNewPosition.index
       ];
     }
@@ -270,7 +270,6 @@ export class Canvelho extends Events {
   }
 
   public handleShortcuts(event: KeyboardEvent): void {
-    console.log(event);
     if (
       (event.key === "a" && event.metaKey) ||
       (event.key === "a" && event.ctrlKey)
@@ -286,7 +285,6 @@ export class Canvelho extends Events {
       (event.key === "ArrowRight" && event.metaKey) ||
       (event.key === "ArrowRight" && event.ctrlKey)
     ) {
-      console.log("here", this.selection.caret.position);
       this.selection.caret.updatePosition({
         line: this.selection.caret.position?.line || 0,
         index:
@@ -317,52 +315,47 @@ export class Canvelho extends Events {
 
       for (let line = start.line; line <= end.line; line++) {
         const lineText = this.text.getText().text[line];
-        if (this.boundingBoxes[line]) {
-          const lineY =
-            this.boundingBoxes[line][0]?.y ||
-            0 - this.context.measureText(lineText).actualBoundingBoxAscent;
+        const currentLineBoxes = this.boundingBoxes[line];
+
+        if (currentLineBoxes) {
+          const metric = this.context.measureText(
+            lineText.length === 0 ? " " : lineText
+          );
+
+          const lineY = currentLineBoxes[0]?.y;
+          const height = currentLineBoxes[0]?.height;
 
           const startX =
             line === start.line
-              ? this.boundingBoxes[line][
+              ? currentLineBoxes[
                   start.index === lineText.length && lineText.length > 0
                     ? start.index - 1
                     : start.index
                 ].x
-              : this.boundingBoxes[line][0]?.x || 0;
+              : currentLineBoxes[0]?.x || 0;
 
           let width = 0;
-          if (line === start.line && line === end.line) {
-            width =
-              this.boundingBoxes[line][Math.max(end.index - 1, 0)].x +
-              this.boundingBoxes[line][Math.max(end.index - 1, 0)].width -
-              startX;
-          } else if (line === start.line) {
-            width =
-              this.boundingBoxes[line][lineText.length - 1].x +
-              this.boundingBoxes[line][lineText.length - 1].width -
-              startX;
-          } else if (line === end.line) {
-            let x =
-              this.boundingBoxes[line][end.index]?.x ??
-              this.boundingBoxes[line][this.boundingBoxes[line].length - 1]?.x +
-                this.boundingBoxes[line][this.boundingBoxes[line].length - 1]
-                  ?.width;
-
-            width = x - startX;
+          if (lineText.length === 0) {
+            width = metric.width;
           } else {
-            width =
-              this.boundingBoxes[line][lineText.length - 1]?.x +
-              this.boundingBoxes[line][lineText.length - 1]?.width -
-              startX;
+            let x = 0;
+            if (line === start.line && line === end.line) {
+              x =
+                currentLineBoxes[Math.max(end.index - 1, 0)].x +
+                currentLineBoxes[Math.max(end.index - 1, 0)].width;
+            } else if (line === end.line) {
+              x =
+                currentLineBoxes[end.index]?.x ??
+                currentLineBoxes[currentLineBoxes.length - 1]?.x;
+            } else {
+              x =
+                currentLineBoxes[lineText.length - 1]?.x +
+                currentLineBoxes[lineText.length - 1]?.width;
+            }
+            width = x - startX;
           }
 
-          this.context.fillRect(
-            startX,
-            lineY,
-            width,
-            this.boundingBoxes[line][0]?.height || 0
-          );
+          this.context.fillRect(startX, lineY, width, height);
         }
       }
     }
@@ -384,7 +377,7 @@ export class Canvelho extends Events {
 
             this.context.font = `${letterStyle.fontWeight} ${letterStyle.fontSize}px ${letterStyle.fontFamily} `;
 
-            const width = this.context.measureText(letter).width;
+            const width = this.context.measureText(letter || "W").width;
             return previous + width;
           },
           0
@@ -417,23 +410,20 @@ export class Canvelho extends Events {
       let cursorX = 0;
 
       boundingBoxes[lineIndex] = [];
-      for (let i = 0; i < line.length; i++) {
+      for (let i = 0; i <= line.length; i++) {
         const letterStyle = getPreviousStyles(styles, {
           line: lineIndex,
           index: i,
         });
 
-        const letter = getStyledLetter(line[i], letterStyle);
+        const letter = getStyledLetter(line[i] || "W", letterStyle);
 
         this.context.font = `${letterStyle.fontStyle} ${letterStyle.fontWeight} ${letterStyle.fontSize}px ${letterStyle.fontFamily} `;
-        const letterWidth = this.context.measureText(letter).width;
-
-        const textMetrics = this.context.measureText(letter);
+        const textMetrics = this.context.measureText(letter || "W");
         const width = textMetrics.width;
         const height =
           textMetrics.actualBoundingBoxAscent +
           textMetrics.actualBoundingBoxDescent;
-
         boundingBoxes[lineIndex].push({
           x: cursorX,
           y: cursorY - textMetrics.actualBoundingBoxAscent,
@@ -441,7 +431,7 @@ export class Canvelho extends Events {
           height,
         });
 
-        cursorX += letterWidth;
+        cursorX += textMetrics.width;
       }
       cursorY += this.lineHeight;
     }

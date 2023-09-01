@@ -26,7 +26,6 @@ export class Text {
   public insertText(text: string, position: { line: number; index: number }) {
     const { line, index } = position;
     const currentLine = this.text[line];
-
     this.text[line] =
       currentLine.slice(0, index) + text + currentLine.slice(index);
 
@@ -67,7 +66,11 @@ export class Text {
         }
 
         let iterator = 0;
-        for (let index = lineLength - 1; index >= startIndex; index--) {
+        for (
+          let index = Math.max(lineLength - 1, 1);
+          index >= startIndex;
+          index--
+        ) {
           callback({ line, index }, iterator);
           iterator++;
         }
@@ -75,24 +78,52 @@ export class Text {
     }
   }
 
+  public removeLine(position: Position) {
+    const { line } = position;
+    this.text.splice(line, 1);
+    this.styles.splice(line, 1);
+  }
+
   public removeText(position: Position | Range | null) {
     if (!position) return;
     if ("start" in position) {
+      const linesToRemove: Position[] = [];
       this.forAllInRange(position, ({ line, index }) => {
+        // if line is empty - remove it
+        if (
+          index === 0 &&
+          (this.text[line].length === 1 || this.text[line].length === 0) &&
+          line !== 0
+        ) {
+          linesToRemove.unshift({ line, index });
+        }
         this.removeText({ line, index: index + 1 });
       });
+      for (let i = linesToRemove.length - 1; i >= 0; i--) {
+        this.removeLine(linesToRemove[i]);
+      }
     } else {
       const { line, index } = position;
       const currentLine = this.text[line];
+      const currentStylesLine = this.styles[line];
       if (index === 0) {
-        const previousLine = this.text[line - 1];
+        if (line === 0) {
+          return;
+        } else {
+          const previousLine = this.text[line - 1];
+          const previousStylesLine = this.styles[line - 1];
 
-        this.text[line - 1] = previousLine + currentLine;
-        this.text.splice(line, 1);
+          this.text[line - 1] = previousLine + currentLine;
+          this.styles[line - 1] = [...previousStylesLine, ...currentStylesLine];
+          this.removeLine(position);
+        }
       } else {
         const textBeforeCaret = currentLine.slice(0, index - 1);
+        const stylesBeforeCaret = currentStylesLine.slice(0, index - 1);
         const textAfterCaret = currentLine.slice(index);
+        const stylesAfterCaret = currentStylesLine.slice(index);
         this.text[line] = textBeforeCaret + textAfterCaret;
+        this.styles[line] = [...stylesBeforeCaret, ...stylesAfterCaret];
       }
     }
   }
@@ -105,7 +136,13 @@ export class Text {
     const styleBeforeCaret = currentStyles.slice(0, index);
     const styleAfterCaret = currentStyles.slice(index);
     const textBeforeCaret = currentLine.slice(0, index);
-    const textAfterCaret = currentLine.slice(index);
+    let textAfterCaret = currentLine.slice(index);
+
+    if (textAfterCaret.length === 0) {
+      // empty line, it has to be an array, because we are using splice
+      // @ts-expect-error
+      textAfterCaret = new Array(0);
+    }
 
     this.text[line] = textBeforeCaret;
     this.styles[line] = styleBeforeCaret;
