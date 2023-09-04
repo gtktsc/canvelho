@@ -10,6 +10,7 @@ import {
   RxFontBold,
   RxFontItalic,
   RxReset,
+  RxUnderline,
 } from "react-icons/rx";
 
 const useCanvasDrawing = (
@@ -115,14 +116,50 @@ const CanvasComponent: React.FC = () => {
     });
   }, [currentStyles, canvelho]);
 
+  const toggleUnderline = useCallback(() => {
+    const toggled = currentStyles?.underline === "none" ? "normal" : "none";
+    canvelho?.setStyle({
+      underline: toggled,
+    });
+  }, [currentStyles, canvelho]);
+
+  const fonts = ["Arial", "Verdana", "Tahoma", "Times New Roman", "Georgia"];
+  const renderFonts = () => {
+    return fonts.map((font, index) => {
+      return (
+        <option key={index} value={font}>
+          {font}
+        </option>
+      );
+    });
+  };
+
   return (
     <>
       <section id="controls-wrapper">
+        <select
+          name="font"
+          id="font-select"
+          value={currentStyles?.fontFamily}
+          onChange={({ target }) => {
+            canvelho?.setStyle({ fontFamily: target.value });
+          }}
+        >
+          {renderFonts()}
+        </select>
+
         <input
           type="color"
           value={currentStyles?.color}
           onChange={(e) => {
             canvelho?.setStyle({ color: e.target.value });
+          }}
+        />
+        <input
+          type="color"
+          value={currentStyles?.backgroundColor}
+          onChange={(e) => {
+            canvelho?.setStyle({ backgroundColor: e.target.value });
           }}
         />
         <input
@@ -151,6 +188,11 @@ const CanvasComponent: React.FC = () => {
         <button onClick={toggleBold}>
           <RxFontBold
             color={currentStyles?.fontWeight === "bold" ? "black" : "grey"}
+          />
+        </button>
+        <button onClick={toggleUnderline}>
+          <RxUnderline
+            color={currentStyles?.underline !== "none" ? "black" : "grey"}
           />
         </button>
         <button

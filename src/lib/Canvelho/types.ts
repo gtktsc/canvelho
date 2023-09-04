@@ -1,7 +1,9 @@
 export type Style = {
   color?: string;
+  backgroundColor?: string;
   fontSize?: number;
   fontFamily?: string;
+  underline?: string;
   fontWeight?: string;
   textTransform?: string;
   fontStyle?: string;

@@ -16,7 +16,6 @@ import {
   getLineHeight,
   getLinePosition,
   getNearestLetterPosition,
-  getNearestLinePosition,
   getPreviousStyles,
   getStyledLetter,
   prepareText,
@@ -596,8 +595,24 @@ export class Canvelho extends Events {
         const letter = getStyledLetter(line[i], letterStyle);
 
         this.context.font = `${letterStyle.fontStyle} ${letterStyle.fontWeight} ${letterStyle.fontSize}px ${letterStyle.fontFamily} `;
-        this.context.fillStyle = letterStyle.color || "#000000";
         const letterWidth = this.context.measureText(letter).width;
+
+        if (letterStyle.backgroundColor !== "transparent") {
+          this.context.fillStyle = letterStyle.backgroundColor || "#000000";
+          this.context.fillRect(
+            cursorX,
+            cursorY - lineHeight,
+            letterWidth + 1,
+            lineHeight
+          );
+        }
+
+        this.context.fillStyle = letterStyle.color || "#000000";
+
+        if (letterStyle.underline !== "none") {
+          this.context.fillRect(cursorX, cursorY + 1, letterWidth + 1, 1);
+        }
+
         this.context.fillText(letter, cursorX, cursorY);
 
         cursorX += letterWidth;
