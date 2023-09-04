@@ -6,6 +6,7 @@ export type Style = {
   textTransform?: string;
   fontStyle?: string;
   textDecoration?: string;
+  lineHeight?: number;
 };
 
 export type Position = { line: number; index: number };
@@ -19,7 +20,11 @@ export type BoundingBoxes = {
   y: number;
   width: number;
   height: number;
+  actualBoundingBoxAscent: number;
+  actualBoundingBoxDescent: number;
+  fontBoundingBoxAscent: number;
+  fontBoundingBoxDescent: number;
 }[][];
 
-export type Text = string[]
-export type Styles = Style[][]
+export type Text = string[];
+export type Styles = Style[][];

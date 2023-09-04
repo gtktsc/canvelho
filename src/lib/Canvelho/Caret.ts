@@ -1,8 +1,9 @@
-import { BoundingBoxes, Position } from "./types";
+import { BoundingBoxes, Position, Styles } from "./types";
 import {
   compareTwoPositions,
   findBoundingBoxAtPosition,
   findLineAtPosition,
+  getNearestLetterPosition,
   getWordBounds,
 } from "./utils";
 
@@ -11,6 +12,7 @@ export class Caret {
   public onChange: () => void;
   public position: Position = { line: 0, index: 0 };
   public boundingBoxes: BoundingBoxes = [[]];
+  public styles: Styles = [[]];
 
   constructor({ onChange }: { onChange: () => void }) {
     this.onChange = onChange;
@@ -29,7 +31,7 @@ export class Caret {
     const { line, index } = this.position;
     const lineText = this.boundingBoxes[line];
     if (event.metaKey || event.ctrlKey) return;
-    
+
     if (event.key === "ArrowLeft") {
       if (index > 0) {
         this.updatePosition({ line, index: index - 1 });
@@ -81,21 +83,21 @@ export class Caret {
 
   public onClick(event: MouseEvent) {
     const { offsetX, offsetY } = event;
-    const clickedBoundingBox = findBoundingBoxAtPosition(
+    const clickedBoundingBox = getNearestLetterPosition(
       offsetX,
       offsetY,
-      this.boundingBoxes
+      this.boundingBoxes,
+      this.styles
     );
     if (clickedBoundingBox) {
+      const { line, index } = clickedBoundingBox;
       if (event.detail === 3) {
-        const { line, index } = clickedBoundingBox;
         const wordBounds = getWordBounds(line, index, this.currentText[line]);
 
         if (wordBounds) {
           this.updatePosition({ ...wordBounds.end });
         }
       } else {
-        const { line, index } = clickedBoundingBox;
         this.updatePosition({ line, index });
       }
       return;
@@ -113,10 +115,11 @@ export class Caret {
 
   public onDoubleClick(event: MouseEvent) {
     const { offsetX, offsetY } = event;
-    const clickedBoundingBox = findBoundingBoxAtPosition(
+    const clickedBoundingBox = getNearestLetterPosition(
       offsetX,
       offsetY,
-      this.boundingBoxes
+      this.boundingBoxes,
+      this.styles
     );
 
     if (clickedBoundingBox) {

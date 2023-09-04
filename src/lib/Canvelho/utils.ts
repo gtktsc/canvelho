@@ -13,8 +13,134 @@ export const getBoundingBoxCenterX = (
   index: number,
   boundingBoxes: BoundingBoxes
 ): number | null => {
-  const letterBox = boundingBoxes[line][index];
-  return letterBox.x + letterBox.width / 2;
+  const letterBox = boundingBoxes[line]?.[index];
+  return letterBox?.x + letterBox?.width / 2;
+};
+
+export const getLinePosition = (
+  line: number,
+  boundingBoxes: BoundingBoxes,
+  styles: Style[][]
+) => {
+  const lineBoundingBox = boundingBoxes[line];
+  const firstLetter = lineBoundingBox[0];
+  const lastLetter = lineBoundingBox[lineBoundingBox.length - 1];
+  let height = 0;
+  let positionY = 0;
+
+  const firstLetterX = firstLetter?.x || 0;
+  const lastLetterX = lastLetter?.x || 0;
+  const lastLetterWidth = lastLetter?.width || 0;
+
+  for (let i = 0; i < lineBoundingBox.length; i++) {
+    const letterBox = lineBoundingBox[i];
+    positionY = Math.max(
+      positionY,
+      letterBox.y + letterBox.actualBoundingBoxAscent
+    );
+    height = Math.max(getLineHeight(styles, line), height);
+  }
+
+  return {
+    x: firstLetterX,
+    y: positionY - height,
+    width: lastLetterX + lastLetterWidth - firstLetterX,
+    height: height,
+  };
+};
+
+export const getLineBoundingBoxPosition = (
+  line: number,
+  boundingBoxes: BoundingBoxes,
+  styles: Style[][]
+) => {
+  const lineBoundingBox = boundingBoxes[line];
+  const firstLetter = lineBoundingBox[0];
+  const lastLetter = lineBoundingBox[lineBoundingBox.length - 1];
+  let height = 0;
+  let positionY = 0;
+
+  const firstLetterX = firstLetter?.x || 0;
+  const lastLetterX = lastLetter?.x || 0;
+  const lastLetterWidth = lastLetter?.width || 0;
+
+  for (let i = 0; i < lineBoundingBox.length; i++) {
+    const letterBox = lineBoundingBox[i];
+    positionY = Math.max(
+      positionY,
+      letterBox.y + letterBox.actualBoundingBoxAscent
+    );
+    height = Math.max(getLineHeight(styles, line), height);
+  }
+
+  return {
+    x: firstLetterX,
+    width: lastLetterX + lastLetterWidth - firstLetterX,
+    y: positionY - height,
+    height: height * 2,
+  };
+};
+
+export const getNearestLinePosition = (
+  x: number,
+  y: number,
+  boundingBoxes: BoundingBoxes,
+  styles: Style[][]
+): number | null => {
+  let line = 0;
+
+  for (let i = 0; i < boundingBoxes.length; i++) {
+    const box = boundingBoxes[i];
+
+    const lineBoundingBox = getLineBoundingBoxPosition(
+      i,
+      boundingBoxes,
+      styles
+    );
+
+    if (i === 0 && y <= lineBoundingBox.y + lineBoundingBox.height) {
+      return 0;
+    } else if (i === boundingBoxes.length - 1 && y >= lineBoundingBox.y) {
+      return boundingBoxes.length - 1;
+    } else {
+      for (let j = 0; j < box.length; j++) {
+        if (
+          y >= lineBoundingBox.y &&
+          y <= lineBoundingBox.y + lineBoundingBox.height
+        ) {
+          line = i;
+          return i;
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+export const getNearestLetterPosition = (
+  x: number,
+  y: number,
+  boundingBoxes: BoundingBoxes,
+  styles: Style[][]
+) => {
+  const nearestLine = getNearestLinePosition(x, y, boundingBoxes, styles);
+
+  if (nearestLine === null) {
+    return null;
+  }
+
+  const line = boundingBoxes[nearestLine];
+  for (let i = 0; i < line.length; i++) {
+    const letterBox = line[i];
+    if (i === 0 && x <= letterBox.x + letterBox.width) {
+      return { line: nearestLine, index: 0 };
+    } else if (i === line.length - 1 && x >= letterBox.x + letterBox.width) {
+      return { line: nearestLine, index: line.length };
+    } else if (x >= letterBox.x && x <= letterBox.x + letterBox.width) {
+      return { line: nearestLine, index: i };
+    }
+  }
 };
 
 export const findBoundingBoxAtPosition = (
@@ -31,6 +157,34 @@ export const findBoundingBoxAtPosition = (
         x <= letterBox.x + letterBox.width &&
         y >= letterBox.y &&
         y <= letterBox.y + letterBox.height
+      ) {
+        return { line: i, index: j };
+      }
+    }
+  }
+  return null;
+};
+export const findNearBoundingBox = (
+  x: number,
+  y: number,
+  boundingBoxes: BoundingBoxes,
+  styles: Style[][]
+): Position | null => {
+  for (let i = 0; i < boundingBoxes.length; i++) {
+    const lineBoundingBox = getLineBoundingBoxPosition(
+      i,
+      boundingBoxes,
+      styles
+    );
+
+    const box = boundingBoxes[i];
+    for (let j = 0; j < box.length; j++) {
+      const letterBox = box[j];
+      if (
+        x >= letterBox.x &&
+        x <= letterBox.x + letterBox.width &&
+        y >= lineBoundingBox.y &&
+        y <= lineBoundingBox.y + lineBoundingBox.height
       ) {
         return { line: i, index: j };
       }
@@ -74,6 +228,24 @@ export const getWordBounds = (
     };
   }
   return null;
+};
+
+export const getLineHeight = (styles: Style[][], line: number) => {
+  let lineHeight = 0;
+  for (let i = 0; i <= styles[line].length; i++) {
+    const style = styles[line][i];
+    if (style?.lineHeight) {
+      lineHeight = Math.max(style.lineHeight, lineHeight);
+    } else {
+      const currentStyle = getPreviousStyles(styles, { line, index: i });
+
+      if (currentStyle?.lineHeight) {
+        lineHeight = Math.max(currentStyle?.lineHeight, lineHeight);
+      }
+    }
+  }
+
+  return lineHeight;
 };
 
 export const getPreviousStyles = (

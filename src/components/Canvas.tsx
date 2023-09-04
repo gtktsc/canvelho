@@ -46,7 +46,7 @@ const useCanvasDrawing = (
       setCanvelho(
         new Canvelho({
           canvas,
-          text: "Simple rich text editor in canvas\nstill in development",
+          text: "Simple rich text editor in canvas\nstill in development\nTry it out!",
         })
       );
     }
@@ -128,10 +128,19 @@ const CanvasComponent: React.FC = () => {
         <input
           type="range"
           min={10}
-          max={50}
+          max={80}
           value={currentStyles?.fontSize}
           onChange={(e) => {
             canvelho?.setStyle({ fontSize: Number(e.target.value) });
+          }}
+        />
+        <input
+          type="range"
+          min={1}
+          max={100}
+          value={currentStyles?.lineHeight}
+          onChange={(e) => {
+            canvelho?.setStyle({ lineHeight: Number(e.target.value) });
           }}
         />
         <button onClick={toggleItalic}>

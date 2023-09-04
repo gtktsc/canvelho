@@ -1,5 +1,6 @@
 import { defaultStyles } from "./constants";
 import { Position, Range, Styles, Text as TextType } from "./types";
+import { getPreviousStyles } from "./utils";
 
 export class Text {
   private text: TextType;
@@ -29,7 +30,12 @@ export class Text {
     this.text[line] =
       currentLine.slice(0, index) + text + currentLine.slice(index);
 
-    this.styles[line].splice(index, 0, this.styles[line][index - 1]);
+    const previousStyles = getPreviousStyles(this.styles, {
+      line,
+      index,
+    });
+
+    this.styles[line].splice(index, 0, previousStyles);
   }
 
   private forAllInRange(

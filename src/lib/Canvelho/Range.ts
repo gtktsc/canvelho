@@ -1,8 +1,8 @@
-import { Position, Range as RangeType, BoundingBoxes } from "./types";
+import { Position, Range as RangeType, BoundingBoxes, Styles } from "./types";
 import {
   compareTwoPositions,
-  findBoundingBoxAtPosition,
   getBoundingBoxCenterX,
+  getNearestLetterPosition,
   getWordBounds,
 } from "./utils";
 
@@ -14,6 +14,7 @@ export class Range {
 
   public position: RangeType | null = null;
   public boundingBoxes: BoundingBoxes = [[]];
+  public styles: Styles = [[]];
 
   public isSelecting: boolean = false;
   public startingPoint: Position | null = null;
@@ -46,10 +47,11 @@ export class Range {
 
   onMouseDown(event: MouseEvent) {
     const { offsetX, offsetY } = event;
-    const clickedBoundingBox = findBoundingBoxAtPosition(
+    const clickedBoundingBox = getNearestLetterPosition(
       offsetX,
       offsetY,
-      this.boundingBoxes
+      this.boundingBoxes,
+      this.styles
     );
 
     if (!clickedBoundingBox) return;
@@ -71,10 +73,11 @@ export class Range {
 
   onDoubleClick(event: MouseEvent) {
     const { offsetX, offsetY } = event;
-    const clickedBoundingBox = findBoundingBoxAtPosition(
+    const clickedBoundingBox = getNearestLetterPosition(
       offsetX,
       offsetY,
-      this.boundingBoxes
+      this.boundingBoxes,
+      this.styles
     );
 
     if (!clickedBoundingBox) return;
@@ -89,10 +92,11 @@ export class Range {
   onClick(event: MouseEvent) {
     if (event.detail === 3) {
       const { offsetX, offsetY } = event;
-      const clickedBoundingBox = findBoundingBoxAtPosition(
+      const clickedBoundingBox = getNearestLetterPosition(
         offsetX,
         offsetY,
-        this.boundingBoxes
+        this.boundingBoxes,
+        this.styles
       );
       if (!clickedBoundingBox) return;
 
@@ -108,10 +112,11 @@ export class Range {
   onMouseMove(event: MouseEvent) {
     if (!this.startingPoint) return;
     const { offsetX, offsetY } = event;
-    const hoveredBoundingBox = findBoundingBoxAtPosition(
+    const hoveredBoundingBox = getNearestLetterPosition(
       offsetX,
       offsetY,
-      this.boundingBoxes
+      this.boundingBoxes,
+      this.styles
     );
 
     if (!hoveredBoundingBox) return;
