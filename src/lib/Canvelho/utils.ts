@@ -23,8 +23,8 @@ export const getLinePosition = (
   styles: Style[][]
 ) => {
   const lineBoundingBox = boundingBoxes[line];
-  const firstLetter = lineBoundingBox[0];
-  const lastLetter = lineBoundingBox[lineBoundingBox.length - 1];
+  const firstLetter = lineBoundingBox?.[0];
+  const lastLetter = lineBoundingBox?.[lineBoundingBox?.length - 1];
   let height = 0;
   let positionY = 0;
 
@@ -32,7 +32,7 @@ export const getLinePosition = (
   const lastLetterX = lastLetter?.x || 0;
   const lastLetterWidth = lastLetter?.width || 0;
 
-  for (let i = 0; i < lineBoundingBox.length; i++) {
+  for (let i = 0; i < lineBoundingBox?.length; i++) {
     const letterBox = lineBoundingBox[i];
     positionY = Math.max(
       positionY,
@@ -246,6 +246,25 @@ export const getLineHeight = (styles: Style[][], line: number) => {
   }
 
   return lineHeight;
+};
+
+export const getTextAlignInitialPosition = (
+  line: number,
+  boundingBoxes: BoundingBoxes,
+  styles: Style[][],
+  context: CanvasRenderingContext2D
+) => {
+  const editorWidth = context.canvas.width;
+  const { width } = getLinePosition(line, boundingBoxes, styles);
+  const textAlign = getPreviousStyles(styles, { line, index: 0 })?.textAlign;
+  if (textAlign === "left") {
+    return 0;
+  } else if (textAlign === "center") {
+    return (editorWidth - width) / 2;
+  } else if (textAlign === "right") {
+    return editorWidth - width;
+  }
+  return 0;
 };
 
 export const getPreviousStyles = (

@@ -11,4 +11,5 @@ export const defaultStyles: Style = {
   textDecoration: "none",
   lineHeight: 48,
   underline: "none",
+  textAlign: "left",
 };

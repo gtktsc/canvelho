@@ -9,6 +9,7 @@ export type Style = {
   fontStyle?: string;
   textDecoration?: string;
   lineHeight?: number;
+  textAlign?: string;
 };
 
 export type Position = { line: number; index: number };

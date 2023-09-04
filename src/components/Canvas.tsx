@@ -134,6 +134,18 @@ const CanvasComponent: React.FC = () => {
     });
   };
 
+  const alignment = ["left", "center", "right"];
+
+  const renderAlignment = () => {
+    return alignment.map((align, index) => {
+      return (
+        <option key={index} value={align}>
+          {align}
+        </option>
+      );
+    });
+  };
+
   return (
     <>
       <section id="controls-wrapper">
@@ -146,6 +158,16 @@ const CanvasComponent: React.FC = () => {
           }}
         >
           {renderFonts()}
+        </select>
+        <select
+          name="alignment"
+          id="alignemnt-select"
+          value={currentStyles?.textAlign}
+          onChange={({ target }) => {
+            canvelho?.setStyle({ textAlign: target.value });
+          }}
+        >
+          {renderAlignment()}
         </select>
 
         <input

@@ -18,6 +18,7 @@ import {
   getNearestLetterPosition,
   getPreviousStyles,
   getStyledLetter,
+  getTextAlignInitialPosition,
   prepareText,
 } from "./utils";
 
@@ -489,17 +490,13 @@ export class Canvelho extends Events {
     if (this.selection.caret.position !== null) {
       const { line, index } = this.selection.caret.position;
       const lineText = this.text.getText().text[line];
+      const styles = this.text.getText().styles;
       if (lineText) {
         const textBeforeCaret = lineText.slice(0, index);
-        let position = getLinePosition(
-          line,
-          this.boundingBoxes,
-          this.text.getText().styles
-        );
+        let position = getLinePosition(line, this.boundingBoxes, styles);
 
         const caretX = Array.from(textBeforeCaret).reduce(
           (previous, current, index) => {
-            const styles = this.text.getText().styles;
             const letterStyle = getPreviousStyles(styles, { line, index });
 
             const letter = getStyledLetter(current, letterStyle);
@@ -510,7 +507,12 @@ export class Canvelho extends Events {
 
             return previous + pos.width;
           },
-          0
+          getTextAlignInitialPosition(
+            line,
+            this.boundingBoxes,
+            styles,
+            this.context
+          )
         );
 
         const caretY = position.y;
@@ -536,7 +538,12 @@ export class Canvelho extends Events {
       cursorY += lineHeight;
 
       const line = text[lineIndex];
-      let cursorX = 0;
+      let cursorX = getTextAlignInitialPosition(
+        lineIndex,
+        this.boundingBoxes,
+        styles,
+        this.context
+      );
 
       boundingBoxes[lineIndex] = [];
       for (let i = 0; i <= line.length - 1; i++) {
@@ -584,7 +591,12 @@ export class Canvelho extends Events {
       cursorY += lineHeight;
 
       const line = text[lineIndex];
-      let cursorX = 0;
+      let cursorX = getTextAlignInitialPosition(
+        lineIndex,
+        this.boundingBoxes,
+        styles,
+        this.context
+      );
 
       for (let i = 0; i < line.length; i++) {
         const letterStyle = getPreviousStyles(styles, {
