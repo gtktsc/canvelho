@@ -46,6 +46,27 @@ canvas {
   user-select: none;
 }
 
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.input-wrapper > input {
+  height: 15px;
+}
+
+.select-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+}
+.select-wrapper > select {
+  margin: 0 10px;
+}
+
 button,
 input {
   padding: 0 15px;

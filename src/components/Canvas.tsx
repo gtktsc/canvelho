@@ -7,10 +7,19 @@ import { Position, Range, Styles, Text } from "../lib/Canvelho/types";
 import {
   RxLetterCaseLowercase,
   RxLetterCaseUppercase,
+  RxLetterCaseCapitalize,
   RxFontBold,
   RxFontItalic,
+  RxPencil2,
+  RxLineHeight,
+  RxPencil1,
   RxReset,
   RxUnderline,
+  RxFontSize,
+  RxTextAlignCenter,
+  RxTextAlignLeft,
+  RxTextAlignRight,
+  RxText,
 } from "react-icons/rx";
 import { defaultStyles } from "@/lib/Canvelho/constants";
 
@@ -99,15 +108,6 @@ const CanvasComponent: React.FC = () => {
     });
   }, [currentStyles, canvelho]);
 
-  const toggleLowercase = useCallback(() => {
-    const toggled =
-      currentStyles?.textTransform === "uppercase" ? "lowercase" : "uppercase";
-
-    canvelho?.setStyle({
-      textTransform: toggled,
-    });
-  }, [currentStyles, canvelho]);
-
   const toggleBold = useCallback(() => {
     const toggled = currentStyles?.fontWeight === "bold" ? "normal" : "bold";
 
@@ -134,79 +134,117 @@ const CanvasComponent: React.FC = () => {
     });
   };
 
-  const alignment = ["left", "center", "right"];
+  const toggleAlignment = useCallback(() => {
+    let toggled = "left";
+    if (currentStyles?.textAlign === "left") {
+      toggled = "center";
+    } else if (currentStyles?.textAlign === "center") {
+      toggled = "right";
+    }
+
+    canvelho?.setStyle({
+      textAlign: toggled,
+    });
+  }, [currentStyles, canvelho]);
 
   const renderAlignment = () => {
-    return alignment.map((align, index) => {
-      return (
-        <option key={index} value={align}>
-          {align}
-        </option>
-      );
+    if (currentStyles?.textAlign === "left") {
+      return <RxTextAlignLeft />;
+    } else if (currentStyles?.textAlign === "right") {
+      return <RxTextAlignRight />;
+    }
+    return <RxTextAlignCenter />;
+  };
+
+  const toggleLowercase = useCallback(() => {
+    let toggled = "none";
+    if (currentStyles?.textTransform === "none") {
+      toggled = "uppercase";
+    } else if (currentStyles?.textTransform === "uppercase") {
+      toggled = "lowercase";
+    }
+
+    canvelho?.setStyle({
+      textTransform: toggled,
     });
+  }, [currentStyles, canvelho]);
+
+  const renderTextCase = () => {
+    if (currentStyles?.textTransform === "uppercase") {
+      return <RxLetterCaseUppercase />;
+    } else if (currentStyles?.textTransform === "lowercase") {
+      return <RxLetterCaseLowercase />;
+    }
+    return <RxLetterCaseCapitalize />;
   };
 
   return (
     <>
       {canvelho && (
         <section id="controls-wrapper">
-          <select
-            name="font"
-            id="font-select"
-            value={currentStyles?.fontFamily}
-            onChange={({ target }) => {
-              canvelho?.setStyle({ fontFamily: target.value });
-            }}
-          >
-            {renderFonts()}
-          </select>
-          <select
-            name="alignment"
-            id="alignemnt-select"
-            value={currentStyles?.textAlign}
-            onChange={({ target }) => {
-              canvelho?.setStyle({ textAlign: target.value });
-            }}
-          >
-            {renderAlignment()}
-          </select>
+          <div className="select-wrapper">
+            <RxText />
+            <select
+              name="font"
+              id="font-select"
+              value={currentStyles?.fontFamily}
+              onChange={({ target }) => {
+                canvelho?.setStyle({ fontFamily: target.value });
+              }}
+            >
+              {renderFonts()}
+            </select>
+          </div>
 
-          <input
-            type="color"
-            value={currentStyles?.color}
-            onChange={(e) => {
-              canvelho?.setStyle({ color: e.target.value });
-            }}
-          />
-          <input
-            type="color"
-            value={
-              currentStyles?.backgroundColor !== "transparent"
-                ? currentStyles?.backgroundColor
-                : "#ffffff"
-            }
-            onChange={(e) => {
-              canvelho?.setStyle({ backgroundColor: e.target.value });
-            }}
-          />
-          <input
-            type="range"
-            min={10}
-            max={80}
-            value={currentStyles?.fontSize}
-            onChange={(e) => {
-              canvelho?.setStyle({ fontSize: Number(e.target.value) });
-            }}
-          />
-          <input
-            type="range"
-            min={1}
-            max={100}
-            value={currentStyles?.lineHeight}
-            onChange={(e) => {
-              canvelho?.setStyle({ lineHeight: Number(e.target.value) });
-            }}
-          />
+          <button onClick={toggleAlignment}>{renderAlignment()}</button>
+          <div className="input-wrapper">
+            <RxPencil1 />
+            <input
+              type="color"
+              value={currentStyles?.color}
+              onChange={(e) => {
+                canvelho?.setStyle({ color: e.target.value });
+              }}
+            />
+          </div>
+          <div className="input-wrapper">
+            <RxPencil2 />
+            <input
+              type="color"
+              value={
+                currentStyles?.backgroundColor !== "transparent"
+                  ? currentStyles?.backgroundColor
+                  : "#ffffff"
+              }
+              onChange={(e) => {
+                canvelho?.setStyle({ backgroundColor: e.target.value });
+              }}
+            />
+          </div>
+          <div className="input-wrapper">
+            <RxFontSize />
+            <input
+              type="range"
+              min={10}
+              max={80}
+              value={currentStyles?.fontSize}
+              onChange={(e) => {
+                canvelho?.setStyle({ fontSize: Number(e.target.value) });
+              }}
+            />
+          </div>
+          <div className="input-wrapper">
+            <RxLineHeight />
+            <input
+              type="range"
+              min={1}
+              max={100}
+              value={currentStyles?.lineHeight}
+              onChange={(e) => {
+                canvelho?.setStyle({ lineHeight: Number(e.target.value) });
+              }}
+            />
+          </div>
           <button onClick={toggleItalic}>
             <RxFontItalic
               color={currentStyles?.fontStyle === "italic" ? "black" : "grey"}
@@ -229,13 +267,7 @@ const CanvasComponent: React.FC = () => {
           >
             <RxReset />
           </button>
-          <button onClick={toggleLowercase}>
-            {currentStyles?.textTransform === "uppercase" ? (
-              <RxLetterCaseUppercase />
-            ) : (
-              <RxLetterCaseLowercase />
-            )}
-          </button>
+          <button onClick={toggleLowercase}>{renderTextCase()}</button>
         </section>
       )}
 
