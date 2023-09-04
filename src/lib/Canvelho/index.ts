@@ -19,6 +19,7 @@ import {
   getPreviousStyles,
   getStyledLetter,
   getTextAlignInitialPosition,
+  getWordBounds,
   prepareText,
 } from "./utils";
 
@@ -415,11 +416,61 @@ export class Canvelho extends Events {
         index:
           this.boundingBoxes[this.selection.caret.position?.line || 0].length,
       });
+    } else if (
+      (event.key === "ArrowLeft" && event.metaKey) ||
+      (event.key === "ArrowLeft" && event.ctrlKey)
+    ) {
+      this.selection.caret.updatePosition({
+        line: this.selection.caret.position?.line || 0,
+        index: 0,
+      });
+    } else if (
+      (event.key === "ArrowUp" && event.metaKey) ||
+      (event.key === "ArrowUp" && event.ctrlKey)
+    ) {
+      this.selection.caret.updatePosition({
+        line: 0,
+        index: this.selection.caret.position?.index || 0,
+      });
+    } else if (
+      (event.key === "ArrowDown" && event.metaKey) ||
+      (event.key === "ArrowDown" && event.ctrlKey)
+    ) {
+      this.selection.caret.updatePosition({
+        line: this.boundingBoxes.length - 1,
+        index: this.selection.caret.position?.index || 0,
+      });
+    } else if (event.key === "ArrowRight" && event.altKey) {
+      const { line, index } = this.selection.caret.position;
+      const wordBounds = getWordBounds(
+        line,
+        index,
+        this.text.getText().text[line]
+      );
+      if (wordBounds) {
+        this.selection.caret.updatePosition({
+          line: wordBounds.end.line,
+          index: wordBounds.end.index - 1,
+        });
+      }
+    } else if (event.key === "ArrowLeft" && event.altKey) {
+      const { line, index } = this.selection.caret.position;
+      const wordBounds = getWordBounds(
+        line,
+        index - 1,
+        this.text.getText().text[line]
+      );
+      if (wordBounds) {
+        this.selection.caret.updatePosition({
+          line: wordBounds.start.line,
+          index: wordBounds.start.index + 1,
+        });
+      }
     }
   }
 
   public onKeyDown(event: KeyboardEvent) {
-    if (event.metaKey || event.ctrlKey) {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
       this.handleShortcuts(event);
     } else {
       if (this.selection.range.position !== null) {

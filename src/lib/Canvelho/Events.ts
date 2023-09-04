@@ -33,6 +33,7 @@ export class Events {
   onKeyDownCallback(event: KeyboardEvent): void {
     this.onKeyDown?.(event);
     event.stopPropagation();
+    event.preventDefault();
   }
 
   onKeyUpCallback(event: KeyboardEvent): void {

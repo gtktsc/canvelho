@@ -223,8 +223,8 @@ export const getWordBounds = (
     const endIndex = wordEndIndex !== -1 ? wordEndIndex : lineText.length;
 
     return {
-      start: { line, index: wordStartIndex },
-      end: { line, index: endIndex },
+      start: { line, index: Math.min(endIndex, wordStartIndex) },
+      end: { line, index: Math.max(endIndex, wordStartIndex) },
     };
   }
   return null;

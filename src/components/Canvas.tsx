@@ -12,6 +12,7 @@ import {
   RxReset,
   RxUnderline,
 } from "react-icons/rx";
+import { defaultStyles } from "@/lib/Canvelho/constants";
 
 const useCanvasDrawing = (
   canvas: HTMLCanvasElement | null,
@@ -219,12 +220,7 @@ const CanvasComponent: React.FC = () => {
         </button>
         <button
           onClick={() => {
-            canvelho?.setStyle({
-              fontWeight: "normal",
-              fontStyle: "normal",
-              textTransform: "none",
-              fontSize: 20,
-            });
+            canvelho?.setStyle(defaultStyles);
           }}
         >
           <RxReset />
