@@ -88,9 +88,8 @@ const CanvasComponent: React.FC = () => {
     isReady
   );
 
-  const currentStyles = canvelho?.getStyle(
-    rangePosition?.start || caretPosition
-  );
+  const currentStyles =
+    canvelho?.getStyle(rangePosition?.start || caretPosition) || defaultStyles;
 
   const toggleItalic = useCallback(() => {
     const currentStyle = currentStyles?.fontStyle;
@@ -149,90 +148,97 @@ const CanvasComponent: React.FC = () => {
 
   return (
     <>
-      <section id="controls-wrapper">
-        <select
-          name="font"
-          id="font-select"
-          value={currentStyles?.fontFamily}
-          onChange={({ target }) => {
-            canvelho?.setStyle({ fontFamily: target.value });
-          }}
-        >
-          {renderFonts()}
-        </select>
-        <select
-          name="alignment"
-          id="alignemnt-select"
-          value={currentStyles?.textAlign}
-          onChange={({ target }) => {
-            canvelho?.setStyle({ textAlign: target.value });
-          }}
-        >
-          {renderAlignment()}
-        </select>
+      {canvelho && (
+        <section id="controls-wrapper">
+          <select
+            name="font"
+            id="font-select"
+            value={currentStyles?.fontFamily}
+            onChange={({ target }) => {
+              canvelho?.setStyle({ fontFamily: target.value });
+            }}
+          >
+            {renderFonts()}
+          </select>
+          <select
+            name="alignment"
+            id="alignemnt-select"
+            value={currentStyles?.textAlign}
+            onChange={({ target }) => {
+              canvelho?.setStyle({ textAlign: target.value });
+            }}
+          >
+            {renderAlignment()}
+          </select>
 
-        <input
-          type="color"
-          value={currentStyles?.color}
-          onChange={(e) => {
-            canvelho?.setStyle({ color: e.target.value });
-          }}
-        />
-        <input
-          type="color"
-          value={currentStyles?.backgroundColor}
-          onChange={(e) => {
-            canvelho?.setStyle({ backgroundColor: e.target.value });
-          }}
-        />
-        <input
-          type="range"
-          min={10}
-          max={80}
-          value={currentStyles?.fontSize}
-          onChange={(e) => {
-            canvelho?.setStyle({ fontSize: Number(e.target.value) });
-          }}
-        />
-        <input
-          type="range"
-          min={1}
-          max={100}
-          value={currentStyles?.lineHeight}
-          onChange={(e) => {
-            canvelho?.setStyle({ lineHeight: Number(e.target.value) });
-          }}
-        />
-        <button onClick={toggleItalic}>
-          <RxFontItalic
-            color={currentStyles?.fontStyle === "italic" ? "black" : "grey"}
+          <input
+            type="color"
+            value={currentStyles?.color}
+            onChange={(e) => {
+              canvelho?.setStyle({ color: e.target.value });
+            }}
           />
-        </button>
-        <button onClick={toggleBold}>
-          <RxFontBold
-            color={currentStyles?.fontWeight === "bold" ? "black" : "grey"}
+          <input
+            type="color"
+            value={
+              currentStyles?.backgroundColor !== "transparent"
+                ? currentStyles?.backgroundColor
+                : "#ffffff"
+            }
+            onChange={(e) => {
+              canvelho?.setStyle({ backgroundColor: e.target.value });
+            }}
           />
-        </button>
-        <button onClick={toggleUnderline}>
-          <RxUnderline
-            color={currentStyles?.underline !== "none" ? "black" : "grey"}
+          <input
+            type="range"
+            min={10}
+            max={80}
+            value={currentStyles?.fontSize}
+            onChange={(e) => {
+              canvelho?.setStyle({ fontSize: Number(e.target.value) });
+            }}
           />
-        </button>
-        <button
-          onClick={() => {
-            canvelho?.setStyle(defaultStyles);
-          }}
-        >
-          <RxReset />
-        </button>
-        <button onClick={toggleLowercase}>
-          {currentStyles?.textTransform === "uppercase" ? (
-            <RxLetterCaseUppercase />
-          ) : (
-            <RxLetterCaseLowercase />
-          )}
-        </button>
-      </section>
+          <input
+            type="range"
+            min={1}
+            max={100}
+            value={currentStyles?.lineHeight}
+            onChange={(e) => {
+              canvelho?.setStyle({ lineHeight: Number(e.target.value) });
+            }}
+          />
+          <button onClick={toggleItalic}>
+            <RxFontItalic
+              color={currentStyles?.fontStyle === "italic" ? "black" : "grey"}
+            />
+          </button>
+          <button onClick={toggleBold}>
+            <RxFontBold
+              color={currentStyles?.fontWeight === "bold" ? "black" : "grey"}
+            />
+          </button>
+          <button onClick={toggleUnderline}>
+            <RxUnderline
+              color={currentStyles?.underline !== "none" ? "black" : "grey"}
+            />
+          </button>
+          <button
+            onClick={() => {
+              canvelho?.setStyle(defaultStyles);
+            }}
+          >
+            <RxReset />
+          </button>
+          <button onClick={toggleLowercase}>
+            {currentStyles?.textTransform === "uppercase" ? (
+              <RxLetterCaseUppercase />
+            ) : (
+              <RxLetterCaseLowercase />
+            )}
+          </button>
+        </section>
+      )}
+
       <section id="canvas-wrapper">
         <canvas tabIndex={1} ref={canvasRef} />
       </section>

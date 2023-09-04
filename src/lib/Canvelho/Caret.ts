@@ -1,7 +1,6 @@
 import { BoundingBoxes, Position, Styles } from "./types";
 import {
   compareTwoPositions,
-  findBoundingBoxAtPosition,
   findLineAtPosition,
   getNearestLetterPosition,
   getWordBounds,
