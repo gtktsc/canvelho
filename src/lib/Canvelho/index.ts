@@ -1,4 +1,5 @@
 import { Events } from "./Events";
+import { History } from "./History";
 import { Selection } from "./Selection";
 import { Text } from "./Text";
 import {
@@ -40,6 +41,7 @@ export class Canvelho extends Events {
 
   public selection: Selection;
   private text: Text;
+  private history: History;
 
   constructor({
     canvas,
@@ -70,6 +72,10 @@ export class Canvelho extends Events {
 
     this.selection = new Selection({ canvas, onChange: () => this.render() });
     this.text = new Text(prepareText(text));
+    this.history = new History(
+      this.text.getText().text,
+      this.text.getText().styles
+    );
 
     this.render();
     this.updateListeners();
@@ -226,10 +232,14 @@ export class Canvelho extends Events {
     }
 
     this.render();
+
+    const { text, styles: newStyles } = this.text.getText();
+    this.history.add({ text, styles: newStyles });
   }
 
   private updateListeners() {
     const { text, styles } = this.text.getText();
+
     this.selection.caret.boundingBoxes = this.boundingBoxes;
     this.selection.caret.currentText = text;
     this.selection.caret.styles = styles;
@@ -369,19 +379,22 @@ export class Canvelho extends Events {
     }
 
     this.render();
+    this.history.add({ ...this.text.getText() });
   }
 
   private handleSelectionKeyActions(event: KeyboardEvent): void {
     const { start } = this.selection.range.position!;
     let newCaretPosition = start;
-
+    let wasModified = false;
     if (event.key === "Escape") {
       this.selection.range.resetPosition();
     } else if (event.key === "Enter") {
       this.text.removeText(this.selection.range.position);
       this.text.insertNewLine(start);
+      wasModified = true;
     } else if (event.key === "Delete" || event.key === "Backspace") {
       this.text.removeText(this.selection.range.position);
+      wasModified = true;
 
       newCaretPosition = {
         line: start.line,
@@ -390,13 +403,28 @@ export class Canvelho extends Events {
     } else if (event.key.length === 1) {
       this.text.removeText(this.selection.range.position);
       this.text.insertText(event.key, start);
+      wasModified = true;
+    }
+    if (wasModified) {
+      this.history.add({ ...this.text.getText() });
     }
     this.selection.range.resetPosition();
     this.selection.caret.updatePosition(newCaretPosition);
   }
 
   public handleShortcuts(event: KeyboardEvent): void {
-    if (
+    if (event.key === "z" && event.metaKey && !event.shiftKey) {
+      const { text, styles } = this.history.undo();
+      this.text.setText(text);
+      this.text.setStyles(styles);
+      this.render();
+    }
+    if (event.key === "z" && event.metaKey && event.shiftKey) {
+      const { text, styles } = this.history.redo();
+      this.text.setText(text);
+      this.text.setStyles(styles);
+      this.render();
+    } else if (
       (event.key === "a" && event.metaKey) ||
       (event.key === "a" && event.ctrlKey)
     ) {

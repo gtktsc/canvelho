@@ -18,6 +18,10 @@ export class Text {
     this.text = text;
   }
 
+  public setStyles(styles: Styles) {
+    this.styles = styles;
+  }
+
   private generateStylesMap() {
     this.styles = new Array(this.text.length)
       .fill([])
